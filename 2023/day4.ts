@@ -30,7 +30,7 @@ const parseCards = (rawInput: string): Card[] => {
   });
 };
 
-const union = <T>(arr1: T[], arr2: T[]): T[] => {
+const intersection = <T>(arr1: T[], arr2: T[]): T[] => {
   const set1 = new Set(arr1);
   const set2 = new Set(arr2);
   const resultSet = new Set<T>();
@@ -48,7 +48,7 @@ const union = <T>(arr1: T[], arr2: T[]): T[] => {
 };
 
 const cardPoints = (card: Card) => {
-  const commonNumbers = union(card.winningNumbers, card.numbersWeHave).length;
+  const commonNumbers = intersection(card.winningNumbers, card.numbersWeHave).length;
   if (!commonNumbers) {
     return 0;
   }
@@ -65,7 +65,7 @@ const day4p2 = (rawInput: string) => {
   cardsNumbers[cardsNumbers.length - 1] = 0;
   for (let i = 0; i < cards.length; i++) {
     const card = cards[i];
-    const commonNumbers = union(card.winningNumbers, card.numbersWeHave).length;
+    const commonNumbers = intersection(card.winningNumbers, card.numbersWeHave).length;
     for (let j = i + 1; j < i + 1 + commonNumbers; j++) {
       cardsNumbers[j] += cardsNumbers[i];
     }
