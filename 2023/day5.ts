@@ -35,8 +35,8 @@ humidity-to-location map:
 56 93 4`;
 
 type ResourceMapping = {
-  sourceRangeStart: number;
   destinationRangeStart: number;
+  sourceRangeStart: number;
   rangeLength: number;
 };
 
@@ -124,10 +124,7 @@ const destForSource = (
     destinationRangeStart,
     rangeLength,
   } of resourceMappings) {
-    if (
-      source >= sourceRangeStart &&
-      source <= sourceRangeStart + rangeLength
-    ) {
+    if (source >= sourceRangeStart && source < sourceRangeStart + rangeLength) {
       return destinationRangeStart + (source - sourceRangeStart);
     }
   }
@@ -146,7 +143,7 @@ const locationForSeedFactory =
       resourceMappings.temperatureToHumidity,
       resourceMappings.humidityToLocation,
     ].reduce(
-      (acc, resourceMappings) => destForSource(resourceMappings, acc),
+      (acc, resourceMappings, i) => destForSource(resourceMappings, acc),
       seed
     );
 
@@ -161,17 +158,19 @@ const day5p1 = (rawInput: string) => {
 const day5p2 = (rawInput: string) => {
   const resourceMappings = parse(rawInput);
   const seeds = resourceMappings.seeds;
-  const allSeeds: number[] = [];
 
   const locationForSeed = locationForSeedFactory(resourceMappings);
   let minLocation = locationForSeed(seeds[0]);
-
+  const seedRanges: [number, number][] = [];
   for (let i = 0; i < seeds.length; i += 2) {
-    console.log(seeds[i]);
-    for (let j = 0; j < seeds[i + 1] - 1; j++) {
-      const seed = seeds[i] + j + 1;
+    seedRanges.push([seeds[i], seeds[i] + seeds[i + 1]]);
+  }
+  seedRanges.sort(([a], [b]) => a - b);
+
+  for (let i = 0; i < seedRanges.length; i++) {
+    const [start, end] = seedRanges[i];
+    for (let seed = start; seed < end; seed++) {
       const location = locationForSeed(seed);
-      console.log(`\t${seed}: ${location}`);
       if (location < minLocation) {
         minLocation = location;
       }
@@ -179,8 +178,12 @@ const day5p2 = (rawInput: string) => {
   }
 
   return minLocation;
-  //   console.log(allSeeds.length);
 };
 
+console.log(day5p1(smallRawInput));
+console.log(day5p1(day5input));
 console.log(day5p2(smallRawInput));
-// console.log(day5p2(day5input));
+console.log(day5p2(day5input));
+
+// 6472061 too high
+// 6472060

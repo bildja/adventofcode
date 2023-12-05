@@ -27,3 +27,5 @@ lerna-debug.log*
 # Documentation here: https://yarnpkg.com/features/zero-installs
 .yarn/cache
 #.pnp.*
+
+2023/*.js
