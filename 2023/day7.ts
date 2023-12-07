@@ -99,18 +99,31 @@ const compareHands = (hand1: string, hand2: string): number => {
   throw Error("the cards should not be equal");
 };
 
-const getCardValP2 = (hand: string): number => 1;
+const getCardValP2 = (val: string): number => {
+  if (val === "J") {
+    return 1;
+  }
+  const cardLetters = ["T", "Q", "K", "A"];
+  if (cardLetters.includes(val)) {
+    return cardLetters.indexOf(val) + 10;
+  }
+  return Number(val);
+};
 
 const getCombinationP2 = (hand: string) => {
   if (!hand.includes("J")) {
     return getCombination(hand);
   }
-  ["A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
+  return Math.max(
+    ...["A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3", "2"].map(
+      (card) => getCombination(hand.replaceAll("J", card))
+    )
+  );
 };
 
 const compareHandsP2 = (hand1: string, hand2: string): number => {
-  const combination1 = getCombination(hand1);
-  const combination2 = getCombination(hand2);
+  const combination1 = getCombinationP2(hand1);
+  const combination2 = getCombinationP2(hand2);
   if (combination1 !== combination2) {
     return combination1 - combination2;
   }
@@ -129,15 +142,10 @@ const day7p1 = (rawInput: string) =>
     .map(({ bid }, i) => bid * (i + 1))
     .reduce((a, b) => a + b, 0);
 
-const day7p2 = (rawInput: string) => {
-  const handsData = parse(rawInput);
-  console.log(
-    handsData.reduce((set, { hand }) => {
-      set.add((hand.match(/J/g) ?? []).length);
-      return set;
-    }, new Set<number>())
-  );
-};
+const day7p2 = (rawInput: string) =>  parse(rawInput)
+.sort(({ hand: hand1 }, { hand: hand2 }) => compareHandsP2(hand1, hand2))
+.map(({ bid }, i) => bid * (i + 1))
+.reduce((a, b) => a + b, 0);
 
 // console.log(day7p1(smallRawInput));
 // console.log(day7p1(day7input));
