@@ -147,8 +147,8 @@ const day7p2 = (rawInput: string) =>  parse(rawInput)
 .map(({ bid }, i) => bid * (i + 1))
 .reduce((a, b) => a + b, 0);
 
-// console.log(day7p1(smallRawInput));
-// console.log(day7p1(day7input));
+console.log(day7p1(smallRawInput));
+console.log(day7p1(day7input));
 
 console.log(day7p2(smallRawInput));
 console.log(day7p2(day7input));
