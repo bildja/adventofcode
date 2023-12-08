@@ -54,13 +54,15 @@ const parse = (rawInput: string): Data => {
   return { steps, network };
 };
 
-const day8p1 = (rawInput: string) => {
-  const { steps, network } = parse(rawInput);
-  let curNode = "AAA";
-  const targetNode = "ZZZ";
+const stepsCountToTarget = (
+  { steps, network }: Data,
+  startNode: string,
+  isTargetNode: (nodeName: string) => boolean
+) => {
+  let curNode = startNode;
   let stepPointer = 0;
   let stepsCount = 0;
-  while (curNode !== targetNode) {
+  while (!isTargetNode(curNode)) {
     const curStep = steps[stepPointer++];
     stepPointer %= steps.length;
     curNode = curStep === "L" ? network[curNode].left : network[curNode].right;
@@ -69,33 +71,32 @@ const day8p1 = (rawInput: string) => {
   return stepsCount;
 };
 
-const day8p2 = (rawInput: string) => {
-  const { steps, network } = parse(rawInput);
-  let currentNodes = Object.keys(network).filter((nodeName) =>
-    nodeName.endsWith("A")
-  );
-  console.log(currentNodes);
-  let allEndWithZ = false;
-  let stepPointer = 0;
-  let stepsCount = 0;
-  while (!allEndWithZ && stepsCount <= 10 * 10 ** 8) {
-    const curStep = steps[stepPointer++];
-    stepPointer %= steps.length;
-    currentNodes = currentNodes.map((nodeName) =>
-      curStep === "L" ? network[nodeName].left : network[nodeName].right
-    );
+const day8p1 = (rawInput: string) =>
+  stepsCountToTarget(parse(rawInput), "AAA", (nodeName) => nodeName === "ZZZ");
 
-    console.log(currentNodes.filter((nodeName) => nodeName.endsWith("Z")).length);
-    allEndWithZ = currentNodes.every((nodeName) => nodeName.endsWith("Z"));
-    stepsCount++;
+const gcd = (a: number, b: number): number => {
+  if (!b) {
+    return a;
   }
-  return stepsCount;
+  return gcd(b, a % b);
 };
 
-// console.log(day8p1(smallRawInput1));
-// console.log(day8p1(smallRawInput2));
-// console.log(day8p1(day8input));
+const day8p2 = (rawInput: string) => {
+  const { steps, network } = parse(rawInput);
+  return Object.keys(network)
+    .filter((nodeName) => nodeName.endsWith("A"))
+    .map((currentNode) =>
+      stepsCountToTarget({ steps, network }, currentNode, (nodeName) =>
+        nodeName.endsWith("Z")
+      )
+    )
+    .reduce((acc, curValue) => (curValue * acc) / gcd(acc, curValue));
+};
+
+console.log(day8p1(smallRawInput1));
+console.log(day8p1(smallRawInput2));
+console.log(day8p1(day8input));
 
 // console.log("\n======P2======\n");
-// console.log(day8p2(smallRawInputP2));
+console.log(day8p2(smallRawInputP2));
 console.log(day8p2(day8input));
