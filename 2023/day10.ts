@@ -1,5 +1,4 @@
 import { day10input } from "./day10input";
-import fs from "fs";
 
 const smallRawInput = `
 -L|F7
@@ -21,7 +20,7 @@ const parse = (rawInput: string) =>
     .split("\n")
     .map((line) => line.split(""));
 
-const findStart = (pipeMap: string[] | string[][]): [number, number] => {
+const findStart = (pipeMap: string[][]): [number, number] => {
   for (let i = 0; i < pipeMap.length; i++) {
     for (let j = 0; j < pipeMap[i].length; j++) {
       if (pipeMap[i][j] === "S") {
@@ -32,10 +31,7 @@ const findStart = (pipeMap: string[] | string[][]): [number, number] => {
   throw Error("could not find start");
 };
 
-const printLoopPipeMap = (loopPipeMap: string[][]) =>
-  loopPipeMap.map((line) => line.join("")).join("\n");
-
-const fitsTheMap = <T>([i, j]: [number, number], map: T[][] | string[]) =>
+const fitsTheMap = <T>([i, j]: [number, number], map: T[][]) =>
   i >= 0 && j >= 0 && i < map.length && j < map[i].length;
 
 type Neigbour = {
@@ -44,11 +40,7 @@ type Neigbour = {
   connectsTo: string[];
 };
 
-const getNeigbours = (
-  curI: number,
-  curJ: number,
-  pipeMap: string[] | string[][]
-) => {
+const getNeigbours = (curI: number, curJ: number, pipeMap: string[][]) => {
   const allNeigbours: Neigbour[] = [
     {
       coord: [curI, curJ - 1],
@@ -79,7 +71,7 @@ const getNeigbours = (
   );
 };
 
-const buildLoopPipeMap = (pipeMap: string[] | string[][]): string[][] => {
+const buildLoopPipeMap = (pipeMap: string[][]): string[][] => {
   const [startI, startJ] = findStart(pipeMap);
   const loopPipeMap: string[][] = new Array(pipeMap.length)
     .fill(undefined)
@@ -275,15 +267,12 @@ const expandVertically = (
       const elToInsert = connectedVerticallyOptions.includes(connection)
         ? "|"
         : ".";
-      //   const rowStart = pipeMapCopy[i].slice(0, j);
-      //   const rowEnd = pipeMapCopy[i].slice(j);
       newLine[j] = elToInsert;
     }
     pipeMapCopy.splice(i, 0, newLine);
   };
 
-  const m = pipeMapCopy[0].length;
-  for (let j = 0; j < m; j++) {
+  for (let j = 0; j < pipeMapCopy[0].length; j++) {
     for (let i = 1; i < pipeMapCopy.length; i++) {
       const cur = pipeMapCopy[i][j];
       const prev = pipeMapCopy[i - 1][j];
@@ -309,20 +298,13 @@ const fillOutsides = (pipeMap: string[][]): string[][] => {
       ([i, j]) => fitsTheMap([i, j], pipeMapCopy) && pipeMapCopy[i][j] === "."
     );
   };
-  //   const visited = new Set<string>();
   const traverse = (startI: number, startJ: number) => {
     const queue: [number, number][] = [[startI, startJ]];
-    let count = 0;
     while (queue.length) {
-      count++;
-      if (count % 10 ** 5 === 0) {
-        console.log("count", count);
-      }
       const [curI, curJ] = queue.shift()!;
       if (pipeMapCopy[curI][curJ] !== ".") {
         continue;
       }
-      //   visited.add(`${curI}${curJ}`);
       pipeMapCopy[curI][curJ] = "O";
       for (const [i, j] of getEmptyNeigbours(curI, curJ)) {
         queue.push([i, j]);
