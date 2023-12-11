@@ -1,0 +1,8 @@
+import { day%(dayNumber)input } from './day%(dayNumber)input';
+
+const smallRawInput = ``;
+
+const day%(dayNumber)p1 = (rawInput: string) => {};
+
+console.log(day%(dayNumber)p1(smallRawInput));
+console.log(day%(dayNumber)p1(day%(dayNumber)input));

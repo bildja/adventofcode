@@ -2,12 +2,16 @@
   "name": "adventofcode",
   "packageManager": "yarn@3.3.0",
   "scripts": {
-    "tsc-init": "tsc -init"
+    "tsc-init": "tsc -init",
+    "bootstrapDay": "ts-node ./scripts/bootstrapDay.ts"
   },
   "devDependencies": {
     "@types/node": "^18.19.3",
+    "@types/yargs": "^17.0.32",
+    "dotenv": "^16.3.1",
     "prettier": "^2.8.8",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "yargs": "^17.7.2"
   }
 }
