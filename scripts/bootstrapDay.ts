@@ -58,7 +58,7 @@ const bootstrapDay = async (year: string, day: string) => {
   const inputFileName = path.join(__dirname, "..", year, `day${day}input.ts`);
   await Promise.all([
     writeFile(fileName, dayNContent),
-    writeFile(inputFileName, dayNInputContent),
+    writeFile(inputFileName, dayNInputContent, { mode: 0o444 }),
   ]);
   console.log(`tadam! go ahead and solve it in "${fileName}"`);
 };
