@@ -48,7 +48,6 @@ const bootstrapDay = async (year: string, day: string) => {
     )
   );
   const dayNContent = dayNTemplate.replaceAll("%(dayNumber)", day);
-  console.log("session", process.env.SESSION_KEY);
   const input = process.env.SESSION_KEY
     ? await fetchInput(year, day, process.env.SESSION_KEY)
     : "";
