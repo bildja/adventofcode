@@ -150,10 +150,14 @@ const unfold = (rawInput: string): string =>
 
 const day12p2 = (rawInput: string) => day12p1(unfold(rawInput));
 
-console.log(day12p1(smallRawInput));
-console.log(day12p1(day12input));
+// console.log(day12p1(smallRawInput));
+
+
+// console.log(day12p1(day12input));
 
 console.log("\n====== P2 ======\n");
-
-console.log(day12p2(smallRawInput));
-console.log(day12p2(day12input));
+console.log(day12p2("?#?#?????????????.?. 8,1,1,1,1,1"));
+console.log(day12p2("?????#?#??#??. 1,3,2"));
+console.log(day12p2("???#???.???#? 2,1,1,2"));
+// console.log(day12p2(smallRawInput));
+// console.log(day12p2(day12input));
