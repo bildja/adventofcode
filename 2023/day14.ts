@@ -42,7 +42,7 @@ const rollTo = (
     const start = direction === 1 ? 0 : column.length - 1;
     const end = direction === 1 ? column.length - 1 : 0;
     let fallTo = start;
-    for (let i = start; direction === 1 ? i <= end : i >= end; i += direction) {
+    for (let i = start; -direction * i >= -direction * end; i += direction) {
       if (column[i] === "#") {
         fallTo = i + direction;
         continue;
@@ -120,7 +120,7 @@ const runCycles = (
   return cycled;
 };
 
-const day14p2 = (rawInput: string, debug = 6) => {
+const day14p2 = (rawInput: string) => {
   const map: readonly string[][] = parse(rawInput);
 
   const cycled = runCycles(map, 1000000000);
@@ -135,5 +135,5 @@ console.log(day14p1(day14input));
 
 console.log("\n======== P2 ========\n");
 
-console.log(day14p2(smallRawInput, 6));
-console.log(day14p2(day14input, 118));
+console.log(day14p2(smallRawInput));
+console.log(day14p2(day14input));
