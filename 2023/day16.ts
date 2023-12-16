@@ -33,11 +33,6 @@ const calcEnergizedCount = (map: string[], start: Beam): number => {
       new Array(map[i].length).fill(undefined).map(() => new Set())
     );
 
-  const getEnergizeMapSnapshot = () =>
-    energizeMap
-      .map((line) => line.map((el) => (el.size > 0 ? "#" : ".")).join(""))
-      .join("\n");
-
   const queue: Beam[] = [start];
   while (queue.length) {
     const beam = queue.shift()!;
@@ -85,7 +80,6 @@ const calcEnergizedCount = (map: string[], start: Beam): number => {
           left: "down",
         };
         beam.direction = directionsMap[beam.direction];
-        queue.push(beam);
         break;
       }
       case "\\": {
@@ -96,7 +90,6 @@ const calcEnergizedCount = (map: string[], start: Beam): number => {
           left: "up",
         };
         beam.direction = directionsMap[beam.direction];
-        queue.push(beam);
         break;
       }
       case "|": {
@@ -109,8 +102,7 @@ const calcEnergizedCount = (map: string[], start: Beam): number => {
             direction: "down",
             coord: [i, j],
           });
-        } else {
-          queue.push(beam);
+          continue;
         }
         break;
       }
@@ -124,19 +116,15 @@ const calcEnergizedCount = (map: string[], start: Beam): number => {
             direction: "left",
             coord: [i, j],
           });
-        } else {
-          queue.push(beam);
+          continue;
         }
         break;
-      }
-      case ".": {
-        queue.push(beam);
       }
       default:
         break;
     }
+    queue.push(beam);
   }
-  //   console.log(getEnergizeMapSnapshot());
   return energizeMap
     .map((energizeLine) => energizeLine.filter((el) => el.size > 0).length)
     .reduce((a, b) => a + b);
@@ -149,32 +137,30 @@ const day16p1 = (rawInput: string) => {
 
 const day16p2 = (rawInput: string) => {
   const map = parse(rawInput);
-  const energizedCounts: number[] = [];
   const n = map.length;
-  for (let i = 0; i < n; i++) {
-    const beams: Beam[] = [
-      {
-        direction: "up",
-        coord: [n, i],
-      },
-      {
-        direction: "down",
-        coord: [-1, i],
-      },
-      {
-        direction: "right",
-        coord: [i, -1],
-      },
-      {
-        direction: "left",
-        coord: [i, n],
-      },
-    ];
-    for (const beam of beams) {
-      energizedCounts.push(calcEnergizedCount(map, beam));
-    }
-  }
-  return Math.max(...energizedCounts);
+  const getIthBeams = (i: number): Beam[] => [
+    {
+      direction: "up",
+      coord: [n, i],
+    },
+    {
+      direction: "down",
+      coord: [-1, i],
+    },
+    {
+      direction: "right",
+      coord: [i, -1],
+    },
+    {
+      direction: "left",
+      coord: [i, n],
+    },
+  ];
+  return Math.max(
+    ...map
+      .flatMap((_, i) => getIthBeams(i))
+      .map((beam) => calcEnergizedCount(map, beam))
+  );
 };
 
 console.log(day16p1(smallRawInput));
