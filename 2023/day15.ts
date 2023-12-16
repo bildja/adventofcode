@@ -4,15 +4,6 @@ const smallRawInput = `rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7`;
 
 const hash = (str: string): number =>
   Array.from(str).reduce((acc, ch) => ((acc + ch.charCodeAt(0)) * 17) % 256, 0);
-//  {
-//   let curValue = 0;
-//   for (let i = 0; i < str.length; i++) {
-//     curValue += str.charCodeAt(i);
-//     curValue *= 17;
-//     curValue %= 256;
-//   }
-//   return curValue;
-// };
 
 const parseP1 = (rawInput: string) => rawInput.split(",");
 
