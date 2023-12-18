@@ -31,9 +31,9 @@ type QueueStep = {
 
 const cEq = ([i1, j1]: Coord, [i2, j2]: Coord) => i1 === i2 && j1 === j2;
 
-const getDirectionKey = ([i1, j1]: Coord, [i2, j2]: Coord): string => {
+const getDirectionKey = ([i1, j1]: Coord, [i2, j2]: Coord): Direction => {
   const coordDiff = (i2 - i1) * 10 + (j2 - j1);
-  const symbolMap: Record<number, string> = {
+  const symbolMap: Record<number, Direction> = {
     10: "v",
     "-10": "^",
     1: ">",
@@ -42,17 +42,16 @@ const getDirectionKey = ([i1, j1]: Coord, [i2, j2]: Coord): string => {
   return symbolMap[coordDiff];
 };
 
-const getLastNPositions = (path: Coord[], coord: Coord, count = 4) => [
-  ...(path.length > count ? path.slice(path.length - (count - 1)) : path),
-  coord,
-];
+type Direction = "^" | "v" | ">" | "<";
 
-const getDirectionKeyFromPath = (path: Coord[], coord: Coord) => {
-  const lastPositions = getLastNPositions(path, coord, 4);
-  //   const keyPath: string[] = [];
+const getDirectionKeyData = (
+  path: Coord[],
+  coord: Coord
+): null | { direction: Direction; count: number } => {
+  const lastPositions = [...path, coord];
   const n = lastPositions.length;
   if (n < 2) {
-    return "";
+    return null;
   }
 
   let i = n - 1;
@@ -68,11 +67,16 @@ const getDirectionKeyFromPath = (path: Coord[], coord: Coord) => {
     count++;
     i--;
   }
-  return `${lastDirectionKey}${count}`;
-  //   for (let i = lastPositions.length - 1; i >= 1; i--) {
-  //     keyPath.unshift(getDirectionKey(lastPositions[i - 1], lastPositions[i]));
-  //   }
-  //   return keyPath.join("");
+  return { count, direction: lastDirectionKey };
+};
+
+const getDirectionKeyFromPath = (path: Coord[], coord: Coord) => {
+  const directionKeyData = getDirectionKeyData(path, coord);
+  if (!directionKeyData) {
+    return "";
+  }
+  const { direction, count } = directionKeyData;
+  return `${direction}${count}`;
 };
 
 const getCoordKey = ([i, j]: Coord) => `${i},${j}`;
@@ -80,57 +84,67 @@ const getCoordKey = ([i, j]: Coord) => `${i},${j}`;
 const getVisitedKey = (path: Coord[], coord: Coord): string => {
   const coordKey = getCoordKey(coord);
   const directionKey = getDirectionKeyFromPath(path, coord);
-  const prevKey = path.length > 0 ? getDirectionKey(path.at(-1)!, coord) : "";
-  return `${directionKey || prevKey}||${coordKey}`;
+  return `${directionKey}||${coordKey}`;
 };
 
-const isAllowed = (coord: Coord, path: Coord[], curCoord: Coord) => {
-  if (path.length < 3) {
+const isAllowed = (
+  coord: Coord,
+  path: Coord[],
+  curCoord: Coord,
+  min = 1,
+  max = 3
+) => {
+  const directionKeyData = getDirectionKeyData(path, curCoord);
+  if (!directionKeyData) {
     return true;
   }
-
-  const lastFourPositions = getLastNPositions([...path, curCoord], coord, 5);
-  const lastFourDiff = (lastFourPositions as Coord[]).reduce(
-    (acc, [i, j], ind) => {
-      if (ind === 0) {
-        return acc;
-      }
-      const [prevI, prevJ] = lastFourPositions[ind - 1];
-      return [...acc, [i - prevI, j - prevJ]] as Coord[];
-    },
-    [] as Coord[]
-  );
-  const allFourSame = (coordNumber: 0 | 1) =>
-    Math.abs(
-      lastFourDiff.map((coord) => coord[coordNumber]).reduce((a, b) => a + b, 0)
-    ) === 4;
-
-  for (const coordNum of [0, 1] as const) {
-    if (allFourSame(coordNum)) {
-      return (
-        coord[coordNum] - curCoord[coordNum] !== lastFourDiff.at(-1)![coordNum]
-      );
-    }
+  const newDirection = getDirectionKey(curCoord, coord);
+  if (
+    directionKeyData.count < min &&
+    newDirection !== directionKeyData.direction
+  ) {
+    return false;
+  }
+  if (
+    directionKeyData.count >= max &&
+    directionKeyData.direction === newDirection
+  ) {
+    return false;
   }
   return true;
 };
 
-const day17p1 = (rawInput: string) => {
+const day17 = (rawInput: string, min: number, max: number) => {
   const map = parse(rawInput);
 
   const insertIntoQueue = (queue: QueueStep[], step: QueueStep) => {
+    if (!queue.length) {
+      queue.push(step);
+      return;
+    }
     const getValue = ({ curSum, coord: [i, j] }: QueueStep) =>
       curSum + map[i][j];
     const queueValues = queue.map(getValue);
     const stepValue = getValue(step);
+    if (queue.length === 1) {
+      const [existingStepValue] = queueValues;
+      if (existingStepValue > stepValue) {
+        queue.unshift(step);
+      } else {
+        queue.push(step);
+      }
+      return;
+    }
+
     let start = 0;
     let end = queue.length - 1;
+
     while (start < end) {
-      const mid = Math.floor((start + end) / 2);
+      const mid = Math.ceil((start + end) / 2);
       if (stepValue < queueValues[mid]) {
-        end = mid;
+        end = mid - 1;
       } else {
-        start = mid + 1;
+        start = mid;
       }
     }
     queue.splice(start, 0, step);
@@ -183,7 +197,23 @@ const day17p1 = (rawInput: string) => {
     const nextSteps: Coord[] = allNextSteps
       .filter((coord) => fitsTheMatr(coord, map))
       .filter((coord) => !isStepBackwards(coord))
-      .filter((coord) => isAllowed(coord, path, curCoord))
+      .filter((coord) => isAllowed(coord, path, curCoord, min, max))
+      .filter((coord) => {
+        const directionKeyData = getDirectionKeyData(newPath, coord);
+        if (!directionKeyData) {
+          return true;
+        }
+        const { direction, count } = directionKeyData;
+        const mustMake = min - (count - 1);
+
+        const maxDistances: Record<Direction, number> = {
+          "<": curJ,
+          ">": map[curI].length - curJ - 1,
+          "^": curI,
+          v: map.length - curI - 1,
+        };
+        return maxDistances[direction] >= mustMake;
+      })
       .filter((coord) => {
         const nextVisitedKey = getVisitedKey(newPath, coord);
         const [nextI, nextJ] = coord;
@@ -208,86 +238,15 @@ const day17p1 = (rawInput: string) => {
   return Math.min(...targetValues) - map[0][0];
 };
 
-const day17p2 = (rawInput: string) => {
-  const map = parse(rawInput);
+const day17p1 = (rawInput: string) => day17(rawInput, 1, 3);
+const day17p2 = (rawInput: string) => day17(rawInput, 4, 10);
 
-  const insertIntoQueue = (queue: QueueStep[], step: QueueStep) => {
-    const getValue = ({ curSum, coord: [i, j] }: QueueStep) =>
-      curSum + map[i][j];
-    const queueValues = queue.map(getValue);
-    const stepValue = getValue(step);
-    let start = 0;
-    let end = queue.length - 1;
-    while (start < end) {
-      const mid = Math.floor((start + end) / 2);
-      if (stepValue < queueValues[mid]) {
-        end = mid;
-      } else {
-        start = mid + 1;
-      }
-    }
-    queue.splice(start, 0, step);
-  };
-
-  const start: Coord = [0, 0];
-  const target: Coord = [map.length - 1, map[map.length - 1].length - 1];
-
-  let queue: QueueStep[] = [{ coord: start, path: [], curSum: 0 }];
-  const memo: Record<string, number> = {};
-  const targetValues: number[] = [];
-
-  while (queue.length) {
-    const { coord: curCoord, path, curSum } = queue.shift()!;
-    const [curI, curJ] = curCoord;
-    const newPath: Coord[] = [...path, curCoord];
-    const visitedKey = getVisitedKey(path, curCoord);
-    const newCurSum = curSum + map[curI][curJ];
-    if (cEq(curCoord, target)) {
-      memo[visitedKey] = Math.min(newCurSum, memo[visitedKey] ?? Infinity);
-      targetValues.push(memo[visitedKey]);
-      continue;
-    }
-    if (memo[visitedKey] <= newCurSum) {
-      continue;
-    }
-    memo[visitedKey] = newCurSum;
-
-    const allNextSteps: Coord[] = [
-      [curI, curJ + 1],
-      [curI, curJ - 1],
-      [curI + 1, curJ],
-      [curI - 1, curJ],
-    ];
-    const isStepBackwards = (coord: Coord) =>
-      path.length > 0 && cEq(path.at(-1)!, coord);
-
-    const nextSteps: Coord[] = allNextSteps
-      .filter((coord) => fitsTheMatr(coord, map))
-      .filter((coord) => !isStepBackwards(coord))
-      .filter((coord) => isAllowed(coord, path, curCoord))
-      .filter((coord) => {
-        const nextVisitedKey = getVisitedKey(newPath, coord);
-        const [nextI, nextJ] = coord;
-        return (
-          memo[nextVisitedKey] === undefined ||
-          memo[nextVisitedKey] > newCurSum + map[nextI][nextJ]
-        );
-      });
-    if (!nextSteps.length) {
-      continue;
-    }
-
-    for (const nextStep of nextSteps) {
-      insertIntoQueue(queue, {
-        coord: nextStep,
-        path: newPath,
-        curSum: newCurSum,
-      });
-    }
-  }
-
-  return Math.min(...targetValues) - map[0][0];
-};
+const smallerInputP2 = `
+111111111111
+999999999991
+999999999991
+999999999991
+999999999991`;
 
 console.log(day17p1(smallRawInput));
 console.log(day17p1(day17input));
@@ -295,3 +254,5 @@ console.log(day17p1(day17input));
 console.log("\n ========== P2 ======== \n");
 
 console.log(day17p2(smallRawInput));
+console.log(day17p2(smallerInputP2));
+console.log(day17p2(day17input));
