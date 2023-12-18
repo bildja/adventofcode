@@ -142,10 +142,11 @@ const day7p1 = (rawInput: string) =>
     .map(({ bid }, i) => bid * (i + 1))
     .reduce((a, b) => a + b, 0);
 
-const day7p2 = (rawInput: string) =>  parse(rawInput)
-.sort(({ hand: hand1 }, { hand: hand2 }) => compareHandsP2(hand1, hand2))
-.map(({ bid }, i) => bid * (i + 1))
-.reduce((a, b) => a + b, 0);
+const day7p2 = (rawInput: string) =>
+  parse(rawInput)
+    .sort(({ hand: hand1 }, { hand: hand2 }) => compareHandsP2(hand1, hand2))
+    .map(({ bid }, i) => bid * (i + 1))
+    .reduce((a, b) => a + b, 0);
 
 console.log(day7p1(smallRawInput));
 console.log(day7p1(day7input));
