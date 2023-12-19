@@ -23,16 +23,13 @@ type MoveToAction = {
   type: "moveTo";
   workflowName: string;
 };
-type MoveAlongAction = {
-  type: "moveAlong";
-};
 type RejectAction = {
   type: "reject";
 };
 type AcceptAction = {
   type: "accept";
 };
-type Action = MoveAlongAction | MoveToAction | RejectAction | AcceptAction;
+type Action = MoveToAction | RejectAction | AcceptAction;
 
 type Part = {
   x: number;
@@ -46,6 +43,7 @@ type Condition = (part: Part) => boolean;
 type WorkflowStep = {
   particleName: keyof Part;
   condition: Condition;
+  conditionRaw: string;
   action: Action;
 };
 type Workflow = {
@@ -58,6 +56,8 @@ type ParsedData = {
   workflows: Workflow[];
   parts: Part[];
 };
+
+const STARTING_CONSTRAINT: Constraint = { min: 1, max: 4000 };
 
 const parseAction = (actionRaw: string): Action => {
   switch (actionRaw) {
@@ -86,7 +86,13 @@ const parseWorkflowStep = (workflowStepRaw: string): WorkflowStep => {
   const conditionsMap: Record<string, Condition> = { ">": gt, "<": lt };
   const condition = conditionsMap[operation];
   const action = parseAction(actionRaw);
-  return { particleName, condition, action };
+  const conditionRaw = `${particleNameRaw}${operation}${compareWithRaw}`;
+  return {
+    particleName,
+    condition,
+    action,
+    conditionRaw,
+  };
 };
 
 const parseWorkflow = (workflowRaw: string): Workflow => {
@@ -126,12 +132,14 @@ const parse = (rawInput: string): ParsedData => {
   };
 };
 
-const day19p1 = (rawInput: string) => {
-  const { workflows, parts } = parse(rawInput);
-  const workflowsDict: Record<string, Workflow> = workflows.reduce(
+const getWorkflowsDict = (workflows: Workflow[]): Record<string, Workflow> =>
+  workflows.reduce(
     (acc, workflow) => ({ ...acc, [workflow.name]: workflow }),
     {}
   );
+
+const runPartThroughWorkflowsFactory = (workflows: Workflow[]) => {
+  const workflowsDict = getWorkflowsDict(workflows);
   const runPartThroughWorkflows = (
     part: Part,
     workflowName: string
@@ -139,9 +147,6 @@ const day19p1 = (rawInput: string) => {
     let workflow = workflowsDict[workflowName];
     const runAction = (action: Action): boolean => {
       switch (action.type) {
-        case "moveAlong": {
-          throw Error("i should delete this action");
-        }
         case "moveTo": {
           return runPartThroughWorkflows(part, action.workflowName);
         }
@@ -160,6 +165,13 @@ const day19p1 = (rawInput: string) => {
     }
     return runAction(workflow.otherwise);
   };
+  return runPartThroughWorkflows;
+};
+
+const day19p1 = (rawInput: string) => {
+  const { workflows, parts } = parse(rawInput);
+
+  const runPartThroughWorkflows = runPartThroughWorkflowsFactory(workflows);
 
   return parts
     .filter((part) => runPartThroughWorkflows(part, "in"))
@@ -167,5 +179,249 @@ const day19p1 = (rawInput: string) => {
     .reduce((a, b) => a + b, 0);
 };
 
+type Node =
+  | {
+      type: "node";
+      name: string;
+      adjacents: Adjacent[];
+    }
+  | { type: "reject" }
+  | { type: "accept" };
+
+type Adjacent = {
+  conditionRaw: string;
+  conditions: ConditionP2[];
+  node: Node;
+};
+
+type Operation = "<" | ">";
+
+type ConditionP2 = {
+  particleName: keyof Part;
+  operation: Operation;
+  compareWith: number;
+};
+
+const parseCondition = (
+  conditionRaw: string,
+  shouldReverse = false
+): ConditionP2 => {
+  const match = conditionRaw.match(/^(\w+)(>|<)(\d+)$/);
+  if (!match) {
+    throw Error(`can't parse condition "${conditionRaw}"`);
+  }
+  const [, particleNameRaw, operationRaw, compareWithRaw] = match;
+  const reverseMap: Record<Operation, { to: Operation; mult: number }> = {
+    ">": {
+      to: "<",
+      mult: 1,
+    },
+    "<": {
+      to: ">",
+      mult: -1,
+    },
+  };
+
+  const operation = operationRaw as Operation;
+  const compareWith = Number(compareWithRaw);
+
+  return {
+    particleName: particleNameRaw as keyof Part,
+    operation: shouldReverse ? reverseMap[operation].to : operation,
+    compareWith: shouldReverse
+      ? compareWith + reverseMap[operation].mult
+      : compareWith,
+  };
+};
+
+const buildGraph = (workflows: Workflow[]): Node => {
+  const workflowsDict = getWorkflowsDict(workflows);
+  const visited = new Set<Node>();
+
+  const graph: Node = {
+    type: "node",
+    name: "in",
+    adjacents: [],
+  };
+  const queue: Node[] = [graph];
+  const getNodeByAction = (action: Action): Node => {
+    switch (action.type) {
+      case "moveTo": {
+        return {
+          type: "node",
+          name: action.workflowName,
+          adjacents: [],
+        };
+      }
+      case "reject": {
+        return { type: "reject" };
+      }
+      case "accept": {
+        return { type: "accept" };
+      }
+    }
+  };
+
+  while (queue.length) {
+    const curNode = queue.shift()!;
+    if (visited.has(curNode)) {
+      continue;
+    }
+    visited.add(curNode);
+    if (curNode.type === "reject") {
+      continue;
+    }
+    if (curNode.type == "accept") {
+      continue;
+    }
+    const workflow = workflowsDict[curNode.name];
+    for (const step of workflow.steps) {
+      const node = getNodeByAction(step.action);
+      curNode.adjacents.push({
+        conditionRaw: step.conditionRaw,
+        conditions: [parseCondition(step.conditionRaw)],
+        node,
+      });
+    }
+    curNode.adjacents.push({
+      conditionRaw: `not(${curNode.adjacents
+        .map(({ conditionRaw }) => conditionRaw)
+        .join(" && ")})`,
+      conditions: curNode.adjacents.map(({ conditionRaw }) =>
+        parseCondition(conditionRaw, true)
+      ),
+      node: getNodeByAction(workflow.otherwise),
+    });
+    for (const adj of curNode.adjacents) {
+      queue.push(adj.node);
+    }
+  }
+  return graph;
+};
+
+type PathStep = {
+  name: string;
+  conditionRaw: string;
+  conditions: ConditionP2[];
+  pathes: PathStep[];
+};
+type Path = PathStep;
+
+const getPathesToA = (graph: Node) => {
+  if (graph.type !== "node") {
+    throw Error("bad graph");
+  }
+  const root: Path = {
+    name: graph.name,
+
+    conditionRaw: "",
+    conditions: [],
+    pathes: [],
+  };
+
+  const queue: { curNode: Node; curPath: Path }[] = [
+    {
+      curNode: graph,
+      curPath: root,
+    },
+  ];
+  while (queue.length) {
+    const { curNode, curPath } = queue.shift()!;
+    if (curNode.type === "accept") {
+      continue;
+    }
+    if (curNode.type === "reject") {
+      continue;
+    }
+    for (const { node, conditionRaw, conditions } of curNode.adjacents) {
+      const nodeName = node.type === "node" ? node.name : node.type;
+      const nextPath = {
+        name: nodeName,
+        conditionRaw,
+        conditions,
+        pathes: [],
+      };
+      curPath.pathes.push(nextPath);
+
+      queue.push({ curNode: node, curPath: nextPath });
+    }
+  }
+  return root;
+};
+
+type Constraint = {
+  min: number;
+  max: number;
+};
+
+type Constraints = Record<keyof Part, Constraint>;
+
+const calcPathConstraints2 = (path: PathStep) => {
+  const startingConstraint: Constraint = { min: 1, max: 4000 };
+  const startConstraints: Constraints = {
+    x: { ...startingConstraint },
+    m: { ...startingConstraint },
+    a: { ...startingConstraint },
+    s: { ...startingConstraint },
+  };
+  const calc = (pathStep: PathStep, constraints: Constraints): number => {
+    if (pathStep.name === "accept") {
+      return calcCombinations(constraints);
+    }
+    if (pathStep.name === "reject") {
+      return 0;
+    }
+
+    let count = 0;
+    for (const path of pathStep.pathes) {
+      const nextConstraints: Constraints = JSON.parse(
+        JSON.stringify(constraints)
+      );
+      for (const { particleName, operation, compareWith } of path.conditions) {
+        switch (operation) {
+          case "<": {
+            nextConstraints[particleName].max = compareWith - 1;
+            constraints[particleName].min = compareWith;
+            break;
+          }
+          case ">": {
+            nextConstraints[particleName].min = compareWith + 1;
+            constraints[particleName].max = compareWith;
+            break;
+          }
+        }
+      }
+      count += calc(path, nextConstraints);
+    }
+    return count;
+  };
+
+  return calc(path, startConstraints);
+};
+
+const calcCombinations = ({ x, m, a, s }: Constraints) =>
+  (x.max - x.min + 1) *
+  (m.max - m.min + 1) *
+  (a.max - a.min + 1) *
+  (s.max - s.min + 1);
+
+const day19p2 = (rawInput: string) => {
+  const { workflows } = parse(rawInput);
+  const graph = buildGraph(workflows);
+  const pathes = getPathesToA(graph);
+  return calcPathConstraints2(pathes);
+};
+
 console.log(day19p1(smallRawInput));
 console.log(day19p1(day19input));
+
+console.log("\n ========== P2 ========= \n");
+console.log(day19p2(smallRawInput));
+console.log(day19p2(day19input));
+
+("s<1351" &&
+  ("m>2090" || ("a<2006" && ("x<1416" || ("x>1415" && "x<2662"))))) ||
+  ("s>1350" && (("m<1801" && ("m>838" || ("m<839" && "a<1717"))) || "s>2770"));
+
+("s<1351" && "m>2090") ||
+  ("s<1351" && "a<2006" && ("x<1416" || ("x>1415" && "x<2662")));
