@@ -1,4 +1,5 @@
 import { day8input } from "./day8input";
+import { gcd } from "../utils/lcmGcd";
 
 const smallRawInput1 = `RL
 
@@ -73,13 +74,6 @@ const stepsCountToTarget = (
 
 const day8p1 = (rawInput: string) =>
   stepsCountToTarget(parse(rawInput), "AAA", (nodeName) => nodeName === "ZZZ");
-
-const gcd = (a: number, b: number): number => {
-  if (!b) {
-    return a;
-  }
-  return gcd(b, a % b);
-};
 
 const day8p2 = (rawInput: string) => {
   const { steps, network } = parse(rawInput);

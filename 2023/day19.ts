@@ -356,7 +356,7 @@ type Constraint = {
 
 type Constraints = Record<keyof Part, Constraint>;
 
-const calcPathConstraints2 = (path: PathStep) => {
+const calcPathConstraints = (path: PathStep) => {
   const startingConstraint: Constraint = { min: 1, max: 4000 };
   const startConstraints: Constraints = {
     x: { ...startingConstraint },
@@ -409,7 +409,7 @@ const day19p2 = (rawInput: string) => {
   const { workflows } = parse(rawInput);
   const graph = buildGraph(workflows);
   const pathes = getPathesToA(graph);
-  return calcPathConstraints2(pathes);
+  return calcPathConstraints(pathes);
 };
 
 console.log(day19p1(smallRawInput));
@@ -418,10 +418,3 @@ console.log(day19p1(day19input));
 console.log("\n ========== P2 ========= \n");
 console.log(day19p2(smallRawInput));
 console.log(day19p2(day19input));
-
-("s<1351" &&
-  ("m>2090" || ("a<2006" && ("x<1416" || ("x>1415" && "x<2662"))))) ||
-  ("s>1350" && (("m<1801" && ("m>838" || ("m<839" && "a<1717"))) || "s>2770"));
-
-("s<1351" && "m>2090") ||
-  ("s<1351" && "a<2006" && ("x<1416" || ("x>1415" && "x<2662")));
