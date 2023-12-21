@@ -1,3 +1,4 @@
+import { Coord, cEq } from "../utils/Coord";
 import { fitsTheMatr } from "../utils/fitsTheMatr";
 import { day17input } from "./day17input";
 
@@ -22,14 +23,11 @@ const parse = (rawInput: string) =>
     .split("\n")
     .map((line) => line.split("").map(Number));
 
-type Coord = [number, number];
 type QueueStep = {
   coord: Coord;
   path: Coord[];
   curSum: number;
 };
-
-const cEq = ([i1, j1]: Coord, [i2, j2]: Coord) => i1 === i2 && j1 === j2;
 
 const getDirectionKey = ([i1, j1]: Coord, [i2, j2]: Coord): Direction => {
   const coordDiff = (i2 - i1) * 10 + (j2 - j1);
