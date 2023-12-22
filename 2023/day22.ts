@@ -186,26 +186,6 @@ const day22p2 = (rawInput: string) => {
     count += fallen;
   });
   return count;
-
-  //   const bricks = parse(rawInput);
-  //   const { maxX, maxY, maxZ } = getMaxs(bricks);
-  //   const bricksRanges = bricks.map(getBrickRange);
-
-  //   const space: Space = createSpace(maxX, maxY, maxZ);
-  //   fillSpace(space, bricksRanges);
-  //   bricksFall(bricksRanges, space);
-
-  //   let count = 0;
-  //   for (const brickRange of bricksRanges) {
-  //     const copySpace: Space = createSpace(maxX, maxY, maxZ);
-  //     const bricksRangeCopy = removeBrick(bricksRanges, brickRange.name);
-  //     fillSpace(copySpace, bricksRangeCopy);
-
-  //     const fallen = bricksFall(bricksRangeCopy, copySpace);
-
-  //     count += fallen;
-  //   }
-  //   return count;
 };
 
 console.log(day22p1(smallRawInput));
