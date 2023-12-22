@@ -105,14 +105,14 @@ const bricksFall = (space: Space, bricks: Brick[]) => {
           break;
         }
         const ck = coordKey({ x, y, z: z - 1 });
-        if (space.has(ck)) {
-          const brName = space.get(ck)!;
-          const brickThatHolds = bricks.find(({ name }) => name === brName)!;
-          brickThatHolds.holds.add(brickRange.name);
-          brickRange.heldBy.add(brickThatHolds.name);
-          canFallFurther = false;
+        if (!space.has(ck)) {
           continue;
         }
+        const brName = space.get(ck)!;
+        const brickThatHolds = bricks.find(({ name }) => name === brName)!;
+        brickThatHolds.holds.add(brickRange.name);
+        brickRange.heldBy.add(brickThatHolds.name);
+        canFallFurther = false;
       }
       if (!canFallFurther) {
         break;
