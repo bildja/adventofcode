@@ -82,6 +82,7 @@ const bricksFall = (space: Space, bricks: Brick[]) => {
       Math.min(...coords1.map(({ z }) => z)) -
       Math.min(...coords2.map(({ z }) => z))
   );
+  const bricksByName = getBricksByName(bricks);
 
   const brickFall = (brickRange: Brick): boolean => {
     let canFallFurther = true;
@@ -109,7 +110,7 @@ const bricksFall = (space: Space, bricks: Brick[]) => {
           continue;
         }
         const brName = space.get(ck)!;
-        const brickThatHolds = bricks.find(({ name }) => name === brName)!;
+        const brickThatHolds = bricksByName[brName];
         brickThatHolds.holds.add(brickRange.name);
         brickRange.heldBy.add(brickThatHolds.name);
         canFallFurther = false;
@@ -152,16 +153,15 @@ const getBricksByName = (bricks: Brick[]): Record<string, Brick> =>
 
 const init = (rawInput: string) => {
   const bricks = parse(rawInput);
-  const bricksByName = getBricksByName(bricks);
-
   const space: Space = createSpace();
   fillSpace(space, bricks);
   bricksFall(space, bricks);
-  return { bricks, bricksByName, space };
+  return bricks;
 };
 
 const day22p1 = (rawInput: string) => {
-  const { bricks, bricksByName, space } = init(rawInput);
+  const bricks = init(rawInput);
+  const bricksByName = getBricksByName(bricks);
   let count = 0;
   for (const { holds } of bricks) {
     if (!holds.size) {
@@ -184,7 +184,8 @@ const day22p1 = (rawInput: string) => {
 };
 
 const day22p2 = (rawInput: string) => {
-  const { bricks, bricksByName } = init(rawInput);
+  const bricks = init(rawInput);
+  const bricksByName = getBricksByName(bricks);
 
   const countWillHold = (
     { holds, name }: Brick,
