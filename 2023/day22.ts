@@ -11,12 +11,12 @@ const smallRawInput = `
 
 type Coord3d = { x: number; y: number; z: number };
 type CoordName = keyof Coord3d;
-type Brick = {
+type BrickRaw = {
   start: Coord3d;
   end: Coord3d;
   name: string;
 };
-type BrickRange = {
+type Brick = {
   range: Coord3d[];
   name: string;
   holds: Set<string>;
@@ -33,25 +33,15 @@ const parse = (rawInput: string): Brick[] =>
         .map((str) => str.split(",").map(Number))
         .map(([x, y, z]) => ({ x, y, z }));
       return { start, end, name: String.fromCharCode("a".charCodeAt(0) + i) };
-    });
-
-const getMaxs = (bricks: Brick[]) => {
-  const getAllCoords = (coordName: CoordName) =>
-    bricks.flatMap(({ start, end }) => [start[coordName], end[coordName]]);
-
-  return {
-    maxX: Math.max(...getAllCoords("x")),
-    maxY: Math.max(...getAllCoords("y")),
-    maxZ: Math.max(...getAllCoords("z")),
-  };
-};
+    })
+    .map(getBrickRange);
 
 type CoordKey = `${number},${number},${number}`;
 const coordKey = ({ x, y, z }: Coord3d): CoordKey => `${x},${y},${z}`;
 
 type Space = Map<CoordKey, string>;
 
-const getBrickRange = ({ start, end, name }: Brick): BrickRange => {
+const getBrickRange = ({ start, end, name }: BrickRaw): Brick => {
   const { x: x1, y: y1, z: z1 } = start;
   const { x: x2, y: y2, z: z2 } = end;
   const coords: Coord3d[] = [];
@@ -86,14 +76,14 @@ const getBrickRange = ({ start, end, name }: Brick): BrickRange => {
   return { range: coords, name, holds: new Set(), heldBy: new Set() };
 };
 
-const bricksFall = (bricks: BrickRange[], space: Space) => {
+const bricksFall = (space: Space, bricks: Brick[]) => {
   bricks.sort(
     ({ range: coords1 }, { range: coords2 }) =>
       Math.min(...coords1.map(({ z }) => z)) -
       Math.min(...coords2.map(({ z }) => z))
   );
 
-  const brickFall = (brickRange: BrickRange): boolean => {
+  const brickFall = (brickRange: Brick): boolean => {
     let canFallFurther = true;
     let hasFallen = false;
     for (const coord of brickRange.range) {
@@ -147,10 +137,9 @@ const bricksFall = (bricks: BrickRange[], space: Space) => {
   return countFallen;
 };
 
-const createSpace = (maxX: number, maxY: number, maxZ: number): Space =>
-  new Map();
+const createSpace = (): Space => new Map();
 
-const fillSpace = (space: Space, bricksRanges: BrickRange[]) => {
+const fillSpace = (space: Space, bricksRanges: Brick[]) => {
   for (const { range, name } of bricksRanges) {
     for (const coord of range) {
       space.set(coordKey(coord), name);
@@ -158,20 +147,23 @@ const fillSpace = (space: Space, bricksRanges: BrickRange[]) => {
   }
 };
 
-const day22p1 = (rawInput: string) => {
-  const bricks = parse(rawInput);
-  const { maxX, maxY, maxZ } = getMaxs(bricks);
-  const bricksRanges = bricks.map(getBrickRange);
-  const bricksByName: Record<string, BrickRange> = bricksRanges.reduce(
-    (acc, brick) => ({ ...acc, [brick.name]: brick }),
-    {}
-  );
+const getBricksByName = (bricks: Brick[]): Record<string, Brick> =>
+  bricks.reduce((acc, brick) => ({ ...acc, [brick.name]: brick }), {});
 
-  const space: Space = createSpace(maxX, maxY, maxZ);
-  fillSpace(space, bricksRanges);
-  bricksFall(bricksRanges, space);
+const init = (rawInput: string) => {
+  const bricks = parse(rawInput);
+  const bricksByName = getBricksByName(bricks);
+
+  const space: Space = createSpace();
+  fillSpace(space, bricks);
+  bricksFall(space, bricks);
+  return { bricks, bricksByName, space };
+};
+
+const day22p1 = (rawInput: string) => {
+  const { bricks, bricksByName, space } = init(rawInput);
   let count = 0;
-  for (const { holds } of bricksRanges) {
+  for (const { holds } of bricks) {
     if (!holds.size) {
       count++;
       continue;
@@ -192,20 +184,10 @@ const day22p1 = (rawInput: string) => {
 };
 
 const day22p2 = (rawInput: string) => {
-  const bricks = parse(rawInput);
-  const { maxX, maxY, maxZ } = getMaxs(bricks);
-  const bricksRanges = bricks.map(getBrickRange);
-  const bricksByName: Record<string, BrickRange> = bricksRanges.reduce(
-    (acc, brick) => ({ ...acc, [brick.name]: brick }),
-    {}
-  );
-
-  const space: Space = createSpace(maxX, maxY, maxZ);
-  fillSpace(space, bricksRanges);
-  bricksFall(bricksRanges, space);
+  const { bricks, bricksByName } = init(rawInput);
 
   const countWillHold = (
-    { holds, name }: BrickRange,
+    { holds, name }: Brick,
     fallenBricks: Set<string> = new Set()
   ): number => {
     if (!holds.size) {
@@ -228,7 +210,7 @@ const day22p2 = (rawInput: string) => {
     return count;
   };
   let total = 0;
-  for (const brick of bricksRanges) {
+  for (const brick of bricks) {
     total += countWillHold(brick);
   }
   return total;
