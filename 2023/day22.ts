@@ -30,36 +30,18 @@ const parse = (rawInput: string): Brick[] =>
       return { start, end, name: String.fromCharCode("a".charCodeAt(0) + i) };
     });
 
-const getMaxMins = (bricks: Brick[]) => {
+const getMaxs = (bricks: Brick[]) => {
   const getAllCoords = (coordName: CoordName) =>
     bricks.flatMap(({ start, end }) => [start[coordName], end[coordName]]);
 
-  const allX = getAllCoords("x");
-  const allY = getAllCoords("y");
-  const allZ = getAllCoords("z");
-  const maxX = Math.max(...allX);
-  const minX = Math.min(...allX);
-  const maxY = Math.max(...allY);
-  const minY = Math.min(...allY);
-  const maxZ = Math.max(...allZ);
-  const minZ = Math.min(...allZ);
-  return { maxX, minX, maxY, minY, maxZ, minZ };
+  return {
+    maxX: Math.max(...getAllCoords("x")),
+    maxY: Math.max(...getAllCoords("y")),
+    maxZ: Math.max(...getAllCoords("z")),
+  };
 };
 
 type Space = boolean[][][];
-
-type CoordKey = `${number},${number},${number}`;
-
-const coordKey = ({ x, y, z }: Coord3d): CoordKey => `${x},${y},${z}`;
-const fromCoordKey = (coordKey: CoordKey): Coord3d => {
-  const [x, y, z] = coordKey.split(",").map(Number);
-  return { x, y, z };
-};
-
-// class Space {
-//   private storage: Set<CoordKey> = new Set();
-
-// }
 
 const getBrickRange = ({ start, end, name }: Brick): BrickRange => {
   const { x: x1, y: y1, z: z1 } = start;
@@ -77,8 +59,6 @@ const getBrickRange = ({ start, end, name }: Brick): BrickRange => {
       continue;
     }
 
-    // assert(y1 === y2, "y");
-    // assert(z1 === z2, "z");
     const multiplier = diff / Math.abs(diff);
     for (
       let c = start[coordName];
@@ -94,11 +74,11 @@ const getBrickRange = ({ start, end, name }: Brick): BrickRange => {
 };
 
 const bricksFall = (bricks: BrickRange[], space: Space) => {
-  //   bricks.sort(
-  //     ({ range: coords1 }, { range: coords2 }) =>
-  //       Math.min(...coords1.map(({ z }) => z)) -
-  //       Math.min(...coords2.map(({ z }) => z))
-  //   );
+  bricks.sort(
+    ({ range: coords1 }, { range: coords2 }) =>
+      Math.min(...coords1.map(({ z }) => z)) -
+      Math.min(...coords2.map(({ z }) => z))
+  );
 
   const brickFall = (brickRange: BrickRange): boolean => {
     let canFallFurther = true;
@@ -136,24 +116,14 @@ const bricksFall = (bricks: BrickRange[], space: Space) => {
     }
     return hasFallen;
   };
-  let atLeastOnceFallen = false;
+  let countFallen = 0;
   for (const brick of bricks) {
-    // console.log("\tfalling brick", brick.name);
     const brickFallen = brickFall(brick);
     if (brickFallen) {
-      atLeastOnceFallen = true;
+      countFallen++;
     }
-    // const brickRange = getBrickRange({ start, end });
-    // console.log(
-    //   "\t",
-    //   brick.name,
-    //   "[",
-    //   brick.range.map(({ x, y, z }) => `${x},${y},${z}`).join(" - "),
-    //   "]",
-    //   brickFallen
-    // );
   }
-  return atLeastOnceFallen;
+  return countFallen;
 };
 
 const createSpace = (maxX: number, maxY: number, maxZ: number): Space =>
@@ -165,51 +135,85 @@ const createSpace = (maxX: number, maxY: number, maxZ: number): Space =>
         .map(() => new Array(maxZ + 1).fill(false))
     );
 
-const day22p1 = (rawInput: string) => {
-  const bricks = parse(rawInput);
-  const { maxX, maxY, maxZ } = getMaxMins(bricks);
-  const bricksRanges = bricks.map(getBrickRange);
-
-  const space: Space = createSpace(maxX, maxY, maxZ);
+const fillSpace = (space: Space, bricksRanges: BrickRange[]) => {
   for (const { range } of bricksRanges) {
     for (const { x, y, z } of range) {
       space[x][y][z] = true;
     }
   }
+};
 
-  console.log("total count of bricks ranges", bricksRanges.length);
-    while (bricksFall(bricksRanges, space)) {
-      console.log("falling");
-    }
+const removeBrick = (bricksRanges: BrickRange[], name: string) =>
+  bricksRanges
+    .filter((br) => br.name !== name)
+    .map(({ range, name }) => ({
+      name,
+      range: range.map(({ x, y, z }) => ({ x, y, z })),
+    }));
 
-  let count = 0;
+const day22 = (rawInput: string, cb: (fallen: number) => void) => {
+  const bricks = parse(rawInput);
+  const { maxX, maxY, maxZ } = getMaxs(bricks);
+  const bricksRanges = bricks.map(getBrickRange);
+
+  const space: Space = createSpace(maxX, maxY, maxZ);
+  fillSpace(space, bricksRanges);
+  bricksFall(bricksRanges, space);
+
   for (const brickRange of bricksRanges) {
-    console.log("removing brick", brickRange.name);
     const copySpace: Space = createSpace(maxX, maxY, maxZ);
-    const bricksRangeCopy = bricksRanges
-      .filter((br) => br.name !== brickRange.name)
-      .map(({ range, name }) => ({
-        name,
-        range: range.map(({ x, y, z }) => ({ x, y, z })),
-      }));
-    for (const br of bricksRangeCopy) {
-      for (const { x, y, z } of br.range) {
-        if (copySpace[x][y][z]) {
-          throw Error("fallen incorrectly");
-        }
-        copySpace[x][y][z] = true;
-      }
-    }
+    const bricksRangeCopy = removeBrick(bricksRanges, brickRange.name);
+    fillSpace(copySpace, bricksRangeCopy);
     const fallen = bricksFall(bricksRangeCopy, copySpace);
 
-    if (!fallen) {
+    cb(fallen);
+  }
+};
+
+const day22p1 = (rawInput: string) => {
+  let count = 0;
+  day22(rawInput, (fallen) => {
+    if (fallen === 0) {
       count++;
     }
-  }
+  });
   return count;
+};
+
+const day22p2 = (rawInput: string) => {
+  let count = 0;
+  day22(rawInput, (fallen) => {
+    count += fallen;
+  });
+  return count;
+
+  //   const bricks = parse(rawInput);
+  //   const { maxX, maxY, maxZ } = getMaxs(bricks);
+  //   const bricksRanges = bricks.map(getBrickRange);
+
+  //   const space: Space = createSpace(maxX, maxY, maxZ);
+  //   fillSpace(space, bricksRanges);
+  //   bricksFall(bricksRanges, space);
+
+  //   let count = 0;
+  //   for (const brickRange of bricksRanges) {
+  //     const copySpace: Space = createSpace(maxX, maxY, maxZ);
+  //     const bricksRangeCopy = removeBrick(bricksRanges, brickRange.name);
+  //     fillSpace(copySpace, bricksRangeCopy);
+
+  //     const fallen = bricksFall(bricksRangeCopy, copySpace);
+
+  //     count += fallen;
+  //   }
+  //   return count;
 };
 
 console.log(day22p1(smallRawInput));
 console.log(day22p1(day22input));
 
-// 713 too high
+console.log("\n================ P2 ==============\n");
+
+console.log(day22p2(smallRawInput));
+console.log(day22p2(day22input));
+
+// 1837 too low
