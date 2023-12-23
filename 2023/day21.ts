@@ -1,6 +1,6 @@
 import { day21input } from "./day21input";
 import { Coord } from "../utils/Coord";
-import { getAllNeigbhours } from "../utils/allNeighbours";
+import { getAllNeighbours } from "../utils/allNeighbours";
 
 const smallRawInput = `
 ...........
@@ -51,7 +51,7 @@ const day21p1 = (rawInput: string, steps: number) => {
   for (let k = 0; k < steps; k++) {
     const newVisitedMap = new Map<string, Coord>();
     for (const coord of visitedMap.values()) {
-      for (const neigbhour of getAllNeigbhours(coord).filter(
+      for (const neigbhour of getAllNeighbours(coord).filter(
         (coord) => getMapPoint(coord) !== "#"
       )) {
         newVisitedMap.set(key(neigbhour), neigbhour);

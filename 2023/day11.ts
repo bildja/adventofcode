@@ -1,3 +1,4 @@
+import { manhattanDistance } from "../utils/Coord";
 import { day11input } from "./day11input";
 
 const smallRawInput = `
@@ -22,11 +23,6 @@ const isAllDot = (line: string[]) => line.every((el) => el === ".");
 
 const printUniverse = (universe: string[][]) =>
   universe.map((line) => line.join("")).join("\n");
-
-const manhattanDistance = (
-  [i1, j1]: [number, number],
-  [i2, j2]: [number, number]
-) => Math.abs(i1 - i2) + Math.abs(j1 - j2);
 
 const getGalaxies = (universe: string[][]): [number, number][] =>
   universe.reduce(
