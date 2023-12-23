@@ -168,21 +168,24 @@ const day23p2 = (rawInput: string) => {
       return 0;
     }
 
-    const nextVisited = new Set(curVisited);
+    const nextVisited = curVisited;
     nextVisited.add(cik);
     const neighboursEntries = Object.entries(edges[cik]) as [
       CoordKey,
       number
     ][];
     if (neighboursEntries.length === 0) {
+      nextVisited.delete(cik);
       return -Infinity;
     }
 
-    return Math.max(
+    const max = Math.max(
       ...neighboursEntries.map(
         ([ck, distance]) => distance + getCount(fromCoordKey(ck), nextVisited)
       )
     );
+    nextVisited.delete(cik);
+    return max;
   };
   return getCount(start, new Set());
 };
@@ -193,4 +196,6 @@ console.log(day23p1(day23input));
 console.log("\n ============= P2 ========= \n");
 
 console.log(day23p2(smallRawInput));
+const startTime = performance.now();
 console.log(day23p2(day23input));
+console.log(`${((performance.now() - startTime) / 1000).toFixed(2)}s`);
