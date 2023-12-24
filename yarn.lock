@@ -118,6 +118,7 @@ __metadata:
     ts-node: ^10.9.2
     typescript: ^5.3.3
     yargs: ^17.7.2
+    z3-solver: ^4.12.4
   languageName: unknown
   linkType: soft
 
@@ -141,6 +142,15 @@ __metadata:
   version: 4.1.3
   resolution: "arg@npm:4.1.3"
   checksum: 544af8dd3f60546d3e4aff084d451b96961d2267d668670199692f8d054f0415d86fc5497d0e641e91546f0aa920e7c29e5250e99fc89f5552a34b5d93b77f43
+  languageName: node
+  linkType: hard
+
+"async-mutex@npm:^0.3.2":
+  version: 0.3.2
+  resolution: "async-mutex@npm:0.3.2"
+  dependencies:
+    tslib: ^2.3.1
+  checksum: 620b771dfdea1cad0a6b712915c31a1e3ca880a8cf1eae92b4590f435995e0260929c6ebaae0b9126b1456790ea498064b5bb9a506948cda760f48d3d0dcc4c8
   languageName: node
   linkType: hard
 
@@ -301,6 +311,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tslib@npm:^2.3.1":
+  version: 2.6.2
+  resolution: "tslib@npm:2.6.2"
+  checksum: 329ea56123005922f39642318e3d1f0f8265d1e7fcb92c633e0809521da75eeaca28d2cf96d7248229deb40e5c19adf408259f4b9640afd20d13aecc1430f3ad
+  languageName: node
+  linkType: hard
+
 "typescript@npm:^5.3.3":
   version: 5.3.3
   resolution: "typescript@npm:5.3.3"
@@ -379,5 +396,14 @@ __metadata:
   version: 3.1.1
   resolution: "yn@npm:3.1.1"
   checksum: 2c487b0e149e746ef48cda9f8bad10fc83693cd69d7f9dcd8be4214e985de33a29c9e24f3c0d6bcf2288427040a8947406ab27f7af67ee9456e6b84854f02dd6
+  languageName: node
+  linkType: hard
+
+"z3-solver@npm:^4.12.4":
+  version: 4.12.4
+  resolution: "z3-solver@npm:4.12.4"
+  dependencies:
+    async-mutex: ^0.3.2
+  checksum: 386b16bb43805ade7d6804d51f7c29aad4cf6e1b8d7f003b9d892e56ad023d33624c07d79c9ebf477fbb53b7b6eea0269ead33f75362743665698c4b0d3d1a34
   languageName: node
   linkType: hard

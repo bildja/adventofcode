@@ -13,5 +13,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "yargs": "^17.7.2"
+  },
+  "dependencies": {
+    "z3-solver": "^4.12.4"
   }
 }
