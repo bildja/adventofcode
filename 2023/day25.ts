@@ -17,7 +17,7 @@ frs: qnr lhk lsr`;
 
 type Component = {
   name: string;
-  connections: string[];
+  connections: Set<string>;
 };
 type Components = Record<string, Component>;
 
@@ -27,23 +27,25 @@ const parse = (rawInput: string): Components =>
     .split("\n")
     .reduce((acc, line) => {
       const name = line.slice(0, 3);
-      const connections = line.slice(5).split(" ");
+      const connections = new Set(line.slice(5).split(" "));
       if (!acc[name]) {
         acc[name] = {
           name,
           connections,
         };
       } else {
-        acc[name].connections.push(...connections);
+        for (const con of connections) {
+          acc[name].connections.add(con);
+        }
       }
       for (const connectionName of connections) {
         if (!acc[connectionName]) {
           acc[connectionName] = {
             name: connectionName,
-            connections: [],
+            connections: new Set<string>(),
           };
         }
-        acc[connectionName].connections.push(name);
+        acc[connectionName].connections.add(name);
       }
       return acc;
     }, {} as Components);
@@ -54,18 +56,22 @@ const day25p1 = (rawInput: string) => {
   const components = parse(rawInput);
   const componentsNames = Object.keys(components);
 
-  const inOrder = (con1: string, con2: string) =>
-    con1 < con2 ? [con1, con2] : [con2, con1];
-  const compNamesToConnections = (compNames: string[]) =>
-    Array.from(
-      new Set(
-        compNames.flatMap((name) =>
-          components[name].connections.map((con) =>
-            inOrder(name, con).join("-")
-          )
-        )
-      )
-    ).map((con) => con.split("-") as Connection);
+  const inOrder = (comp1: string, comp2: string): Connection =>
+    `${comp1}-${comp2}` < `${comp2}-${comp1}` ? [comp1, comp2] : [comp2, comp1];
+
+  const compNamesToConnections = (compNames: string[]): Connection[] => {
+    const connections: Connection[] = [];
+    for (let i = 0; i < compNames.length; i++) {
+      const comp1 = components[compNames[i]];
+      for (let j = i + 1; j < compNames.length; j++) {
+        const comp2 = components[compNames[j]];
+        if (comp1.connections.has(comp2.name)) {
+          connections.push(inOrder(comp1.name, comp2.name));
+        }
+      }
+    }
+    return connections;
+  };
   const allConnections = compNamesToConnections(componentsNames);
 
   const connectionsToComponents = (connections: Connection[]): Components => {
@@ -74,10 +80,10 @@ const day25p1 = (rawInput: string) => {
       if (!components[from]) {
         components[from] = {
           name: from,
-          connections: [],
+          connections: new Set(),
         };
       }
-      components[from].connections.push(to);
+      components[from].connections.add(to);
     };
     for (const [from, to] of connections) {
       addConnection(from, to);
@@ -184,6 +190,7 @@ const day25p1 = (rawInput: string) => {
   const allDistances = buildAllDistances();
   const leastVisitedComponents = leastVisited(allDistances);
   const topConnections = compNamesToConnections(leastVisitedComponents);
+  
   const [a, b] = findGroups(topConnections);
   return a * b;
 };
