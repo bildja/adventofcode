@@ -1,6 +1,7 @@
 import { day24input } from "./day24input";
-import { Coord, coordKey } from "../utils/Coord";
+import { Coord } from "../utils/Coord";
 import { init } from "z3-solver";
+import { intersectInPlane } from "../utils/segments";
 
 const smallRawInput = `
 19, 13, 30 @ -2,  1, -2
@@ -14,65 +15,6 @@ type Coord3d = { x: number; y: number; z: number };
 type Hailstone = {
   coord: Coord3d;
   velocity: Coord3d;
-};
-
-const getKB = ([[xa, ya], [xb, yb]]: [Coord, Coord]): [number, number] => {
-  if (xa === 0) {
-    if (xb === 0) {
-      throw Error("well shrug");
-    }
-    return getKB([
-      [xb, yb],
-      [xa, ya],
-    ]);
-  }
-  const b = (yb * xa - ya * xb) / (xa - xb);
-  const k = (ya - b) / xa;
-  return [k, b];
-};
-
-type Line = [Coord, Coord];
-
-const intersectInPlane = (
-  [[x1, y1], [x2, y2]]: Line,
-  [[x3, y3], [x4, y4]]: Line
-): Coord | null => {
-  // y1 = k1*x1 + b1
-  // y2 = k1*x2 + b1
-  // y3 = k2*x3 + b2
-  // y4 = k2*x4 + b2
-  // k1*x + b1 = k2*x + b2
-  // (y - b1) / k1 == (y - b2) / k2
-  // find [x, y]
-
-  if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
-    return null;
-  }
-  // k1 = (y1 - b1) / x1
-  // b1 = (y2 - k1*x2)
-  // solving the equations system:
-
-  const [k1, b1] = getKB([
-    [x1, y1],
-    [x2, y2],
-  ]);
-
-  const [k2, b2] = getKB([
-    [x3, y3],
-    [x4, y4],
-  ]);
-
-  // now we need to solve equations for same x and y:
-  // k1*x + b1 == k2 * x + b2
-  // (y - b1) / k1 === (y - b2) / k2
-
-  // parallel lines
-  if (k1 === k2) {
-    return null;
-  }
-  const x = (b2 - b1) / (k1 - k2);
-  const y = (b1 * k2 - b2 * k1) / (k2 - k1);
-  return [x, y];
 };
 
 const to3dCoord = ([x, y, z]: [number, number, number]): Coord3d => ({
@@ -98,7 +40,7 @@ const parse = (rawInput: string): Hailstone[] =>
 const addVelocity = (
   { x, y, z }: Coord3d,
   { x: dx, y: dy, z: dz }: Coord3d,
-  coef = 1
+  coef = 1,
 ) => ({
   x: x + coef * dx,
   y: y + coef * dy,
@@ -158,7 +100,7 @@ const day24p1 = (rawInput: string, min: number, max: number) => {
         [
           [x3, y3],
           [x4, y4],
-        ]
+        ],
       );
       if (intersectionCoord) {
         intersections.push({

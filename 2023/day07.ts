@@ -1,4 +1,4 @@
-import { day7input } from "./day7input";
+import { day7input } from "./day07input";
 
 const smallRawInput = `32T3K 765
 T55J5 684

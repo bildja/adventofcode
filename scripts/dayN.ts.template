@@ -1,10 +1,12 @@
 import { day%(dayNumber)input } from './day%(dayNumber)input';
 
-const smallRawInput = ``;
+const smallRawInput = `%(smallInput)`;
 
 const parse = (rawInput: string) => {};
 
-const day%(dayNumber)p1 = (rawInput: string) => {};
+const day%(dayNumber)p1 = (rawInput: string) => {
+  return 0;
+};
 
 console.log(day%(dayNumber)p1(smallRawInput));
 console.log(day%(dayNumber)p1(day%(dayNumber)input));

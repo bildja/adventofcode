@@ -1,4 +1,4 @@
-import { day8input } from "./day8input";
+import { day8input } from "./day08input";
 import { gcd } from "../utils/lcmGcd";
 
 const smallRawInput1 = `RL

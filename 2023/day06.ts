@@ -1,4 +1,4 @@
-import { day6input } from "./day6input";
+import { day6input } from "./day06input";
 
 const smallRawInput = `Time:      7  15   30
 Distance:  9  40  200`;

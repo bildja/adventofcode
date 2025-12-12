@@ -1,4 +1,4 @@
-import { day9input } from "./day9input";
+import { day9input } from "./day09input";
 
 const smallRawInput = `0 3 6 9 12 15
 1 3 6 10 15 21

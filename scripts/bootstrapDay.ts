@@ -5,56 +5,98 @@ import fs from "fs";
 import { readFile, writeFile } from "fs/promises";
 import path from "path";
 import https from "https";
+import * as cheerio from "cheerio";
 
-const fetchInput = (
-  year: string,
-  day: string,
-  session: string
-): Promise<string> => {
-  console.log("trying to fetch input");
-  return new Promise<string>((resolve) => {
-    https.get(
-      `https://adventofcode.com/${year}/day/${day}/input`,
-      {
-        headers: {
-          cookie: `session=${session}`,
-        },
-      },
-      (res) => {
-        let data: Uint8Array[] = [];
-        res.on("data", (chunk) => {
-          data.push(chunk);
-        });
+class AOCDataFetcher {
+  constructor(
+    private year: string,
+    private day: string,
+    private session: string,
+  ) {
+    if (!session) {
+      console.warn(
+        "there is no session, get it from the cookies on aoc website",
+      );
+    }
+  }
 
-        res.on("end", () => {
-          resolve(Buffer.concat(data).toString().trim());
-        });
-      }
+  private doFetch(aocPath: string = ""): Promise<string> {
+    const { year, day, session } = this;
+    if (!session) {
+      console.warn(`not fetching ${aocPath}`);
+      return Promise.resolve("");
+    }
+    console.log(
+      "fetchiing",
+      `https://adventofcode.com/${year}/day/${day}${aocPath}`,
     );
-  });
-};
+    return new Promise<string>((resolve) => {
+      https.get(
+        `https://adventofcode.com/${year}/day/${day}${aocPath}`,
+        {
+          headers: {
+            cookie: `session=${session}`,
+          },
+        },
+        (res) => {
+          let data: Uint8Array[] = [];
+          res.on("data", (chunk) => {
+            data.push(chunk);
+          });
+
+          res.on("end", () => {
+            resolve(Buffer.concat(data).toString().trim());
+          });
+        },
+      );
+    });
+  }
+
+  public fetchInput() {
+    return this.doFetch("/input");
+  }
+
+  public async getSmallInput() {
+    const content = await this.doFetch();
+    const $ = cheerio.load(content);
+    return $("code:first").text().trim();
+  }
+}
 
 const bootstrapDay = async (year: string, day: string) => {
-  const fileName = path.join(__dirname, "..", year, `day${day}.ts`);
+  const folderPath = path.join(__dirname, "..", year, `day${day}`);
+  const folderExists = fs.existsSync(folderPath);
+  if (!folderExists) {
+    fs.mkdirSync(folderPath);
+  }
+  const fileName = path.join(folderPath, `day${day}.ts`);
   console.log("bootstraping...", fileName);
+
   const fileExists = fs.existsSync(fileName);
   if (fileExists) {
     console.error(`File "${fileName}" already exists`);
     return;
   }
+  const aocDataFetcher = new AOCDataFetcher(
+    year,
+    day,
+    process.env.SESSION_KEY ?? "",
+  );
   const [dayNTemplate, dayNInputTemplate] = await Promise.all(
     ["dayN.ts.template", "./dayNinput.ts.template"].map((fn) =>
-      readFile(path.join(__dirname, fn), { encoding: "utf8" })
-    )
+      readFile(path.join(__dirname, fn), { encoding: "utf8" }),
+    ),
   );
-  const dayNContent = dayNTemplate.replaceAll("%(dayNumber)", day);
-  const input = process.env.SESSION_KEY
-    ? await fetchInput(year, day, process.env.SESSION_KEY)
-    : "";
+  const smallInput = await aocDataFetcher.getSmallInput();
+  const dayNContent = dayNTemplate
+    .replaceAll("%(dayNumber)", day)
+    .replaceAll("%(smallInput)", smallInput);
+  const input = await aocDataFetcher.fetchInput();
+
   const dayNInputContent = dayNInputTemplate
     .replaceAll("%(dayNumber)", day)
     .replaceAll("%(input)", input);
-  const inputFileName = path.join(__dirname, "..", year, `day${day}input.ts`);
+  const inputFileName = path.join(folderPath, `day${day}input.ts`);
   await Promise.all([
     writeFile(fileName, dayNContent),
     writeFile(inputFileName, dayNInputContent, { mode: 0o444 }),
